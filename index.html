@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Posenet Real Time Model</title>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/97/three.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/1.2.2/tf.js"></script>
+    <script src="https://unpkg.com/@tensorflow-models/posenet"></script>
+    
+    
+    <link rel="stylesheet" href="https://use.typekit.net/tet7hit.css">
+
+<style>
+/* Style of axis */
+body {
+  background-color: #FFFFFF;
+}
+
+.flex {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+h3 {
+  color: #EFF6EE;
+  font-family: interstate, sans-serif;
+  font-weight: 250;
+  font-style: normal;
+}
+canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+</style>
+</head>
+
+<body>
+
+<div class='flex'>
+  <h3>
+    Posenet & three.js
+  </h3>
+</div>
+
+<div class='flex'>
+  <div id='main' style='display:none'>
+      <video id="video" autoPlay = "true" playsinline style=" -moz-transform: scaleX(-1);
+      -o-transform: scaleX(-1);
+      -webkit-transform: scaleX(-1);
+      transform: scaleX(-1);
+      display: none;
+      ">
+      </video>
+      <canvas id="output" />
+  </div>  
+</div>
+
+<div id='threeContainer' class='flex'>
+</div>
+		<script src="./src/Stats.js"></script>
+		<script src="./loaders/OBJLoader.js"></script>
+		<script src="./loaders/MTLLoader.js"></script>
+		<script src="./loaders/GLTFLoader.js"></script>
+    	<script src="./controls/OrbitControls.js"></script>
+		<script src="./postprocessing/EffectComposer.js"></script>
+		<script src="./postprocessing/ShaderPass.js"></script>
+		<script src="./postprocessing/RenderPass.js"></script>
+		<script src="./postprocessing/BloomPass.js"></script>
+		<script src="./postprocessing/UnrealBloomPass.js"></script>
+		<script src="./postprocessing/FilmPass.js"></script>
+		<script src="./shaders/CopyShader.js"></script>
+		<script src="./shaders/ConvolutionShader.js"></script>
+		<script src="./shaders/FocusShader.js"></script>
+		<script src="./shaders/FilmShader.js"></script>
+		<script src="./shaders/LuminosityHighPassShader.js"></script>
+		<script src="./src/main.js"></script>
+</body>
+
+</html>
