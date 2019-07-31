@@ -90,6 +90,8 @@ loader.load(
 	}
 );
 
+
+//
 /*
 var ironManGeometry = new THREE.Geometry();
 var mtlLoader = new THREE.MTLLoader();
@@ -209,7 +211,7 @@ function render(video, net) {
     // Show a pose (i.e. a person) only if probability more than 0.1
     minPoseConfidence = 0.1;
     // Show a body part only if probability more than 0.3
-    minPartConfidence = 0.5;
+    minPartConfidence = 0.7;
     //poses.push(pose);
     var group = new THREE.Group();
     var bodyPositions = {};
@@ -226,6 +228,7 @@ function render(video, net) {
       }
     }
     scene.add(group);
+    
     /*
     console.log(bodyPositions);
     console.log(boneDict);
@@ -244,10 +247,11 @@ function render(video, net) {
         
       	personMidPoint = midPoint(bodyPositions['leftShoulder'], bodyPositions['rightShoulder']);
       	personMidPoint.z = 0;
-      	group.add(draw_square_point(personMidPoint.x,personMidPoint.y,0x00FF00));
+      	//group.add(draw_square_point(personMidPoint.x,personMidPoint.y,0x00FF00));
       	offset = personMidPoint.clone().sub(boneMidPoint);
-        model.position.set(model.position.x+offset.x, model.position.y + offset.y,0);
-        
+        //model.position.set(model.position.x+offset.x, model.position.y + offset.y,0);
+        var endPosition = new THREE.Vector3(model.position.x+offset.x, model.position.y + offset.y,0);
+        moveTowards(model, endPosition);
         if(realToModelRatio>9 || realToModelRatio<6)
         	model.scale.set(model.scale.x*realToModelRatio/7, model.scale.y*realToModelRatio/7, model.scale.z*realToModelRatio/7);
         
@@ -263,6 +267,7 @@ function render(video, net) {
         if(bodyPositions['leftElbow'])
         {
         	var armAngle = angleBetweenTwoX(bodyPositions['leftShoulder'], bodyPositions['leftElbow']);
+
         	boneDict['upper_armL'].rotation.z = boneAngles['shoulderElbowL'] - armAngle - 3*Math.PI/4;
         }
         if(bodyPositions['rightElbow'])
@@ -282,11 +287,31 @@ function render(video, net) {
         	var armAngle = angleBetweenTwoX(bodyPositions['rightElbow'], bodyPositions['rightWrist']);
         	boneDict['forearmR'].rotation.z = boneAngles['elbowWristR'] - armAngle -Math.PI/2 ;
         }
-
+		if(bodyPositions['leftHip'] && bodyPositions['leftKnee'])
+        {
+        	var angle = angleBetweenTwoX(bodyPositions['leftHip'], bodyPositions['leftKnee']);
+        	boneDict['thighL'].rotation.z = boneAngles['hipKneeL'] + angle + Math.PI ;
+        }
+        if(bodyPositions['rightHip'] && bodyPositions['rightKnee'])
+        {
+        	var angle = angleBetweenTwoX(bodyPositions['rightHip'], bodyPositions['rightKnee']);
+        	boneDict['thighR'].rotation.z = boneAngles['hipKneeR'] + angle + Math.PI ;
+        }
+        if(bodyPositions['leftKnee'] && bodyPositions['leftAnkle'])
+        {
+        	var angle = angleBetweenTwoX(bodyPositions['leftKnee'], bodyPositions['leftAnkle']);
+        	boneDict['shinL'].rotation.z = boneAngles['kneeAnkleL'] + angle  ;
+        }
+		if(bodyPositions['rightKnee'] && bodyPositions['rightAnkle'])
+        {
+        	var angle = angleBetweenTwoX(bodyPositions['rightKnee'], bodyPositions['rightAnkle']);
+        	boneDict['shinR'].rotation.z = boneAngles['kneeAnkleR'] + angle  ;
+        }
         //boneDict['shoulderL'].position.set(bodyPositions['rightShoulder']);
       }
       else
       {
+      	//model.position.set(5,5,5);
       	//couldnt find shoulders
       }
     }
@@ -294,7 +319,7 @@ function render(video, net) {
     time += delta;
     
     ctx.clearRect(0, 0, width, height);
-    const showVideo = true;
+    const showVideo =  false;
     if (showVideo) {
       ctx.save();
       ctx.scale(-1, 1);
@@ -422,6 +447,18 @@ function populateBoneAngles(boneDict, angleDict)
 {
 	angleDict['shoulderElbowL'] = angleBetweenTwoX(boneDict['shoulderL'].position, boneDict['upper_armL'].position);
 	angleDict['shoulderElbowR'] = angleBetweenTwoX(boneDict['shoulderR'].position, boneDict['upper_armR'].position);
+
 	angleDict['elbowWristL'] = angleBetweenTwoX(boneDict['upper_armL'].position, boneDict['handL'].position);
 	angleDict['elbowWristR'] = angleBetweenTwoX(boneDict['upper_armR'].position, boneDict['handR'].position);
+
+	angleDict['hipKneeL'] = angleBetweenTwoX(boneDict['hips'].position, boneDict['thighL'].position);
+	angleDict['hipKneeR'] = angleBetweenTwoX(boneDict['hips'].position, boneDict['thighR'].position);
+
+	angleDict['kneeAnkleL'] = angleBetweenTwoX(boneDict['thighL'].position, boneDict['shinL'].position);
+	angleDict['kneeAnkleR'] = angleBetweenTwoX(boneDict['thighR'].position, boneDict['shinR'].position);
+}
+
+function moveTowards(object, endPosition)
+{
+	object.position.set((object.position.x+endPosition.x)/2, (object.position.y+endPosition.y)/2, (object.position.z+endPosition.z)/2)
 }
