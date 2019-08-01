@@ -1,11 +1,11 @@
 // three.js setup
 
-const width = 500;
-const height = 500;
+const width = 1000;
+const height = 1000;
 
 // Setup scene
 const scene = new THREE.Scene();
-
+//scene.background = new THREE.Color( 0xff0000 );
 //  We use an orthographic camera here instead of persepctive one for easy mapping
 //  Bounded from 0 to width and 0 to height
 // Near clipping plane of 0.1; far clipping plane of 1000
@@ -16,7 +16,7 @@ var canvas = document.createElement( 'canvas' );
 var context = canvas.getContext( 'webgl2' );
 
 // Setting up the renderer
-const renderer = new THREE.WebGLRenderer( { canvas: canvas, context: context, antialias: true, alpha  :true } );
+const renderer = new THREE.WebGLRenderer( { canvas: canvas, context: context, antialias: true, alpha:true } );
 
 renderer.setPixelRatio( window.devicePixelRatio );
 renderer.setSize( width, height );
@@ -47,6 +47,7 @@ scene.add(ambientLight);
 var directionalLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
 scene.add( directionalLight );
 
+	
 var loader = new THREE.GLTFLoader();
 var model;
 var boneDict = {};
@@ -211,7 +212,7 @@ function render(video, net) {
     // Show a pose (i.e. a person) only if probability more than 0.1
     minPoseConfidence = 0.1;
     // Show a body part only if probability more than 0.3
-    minPartConfidence = 0.7;
+    minPartConfidence = 0.3;
     //poses.push(pose);
     var group = new THREE.Group();
     var bodyPositions = {};
@@ -252,7 +253,7 @@ function render(video, net) {
         //model.position.set(model.position.x+offset.x, model.position.y + offset.y,0);
         var endPosition = new THREE.Vector3(model.position.x+offset.x, model.position.y + offset.y,0);
         moveTowards(model, endPosition);
-        if(realToModelRatio>9 || realToModelRatio<6)
+        if(realToModelRatio>7.2 || realToModelRatio<6.8)
         	model.scale.set(model.scale.x*realToModelRatio/7, model.scale.y*realToModelRatio/7, model.scale.z*realToModelRatio/7);
         
 	
@@ -267,7 +268,7 @@ function render(video, net) {
         if(bodyPositions['leftElbow'])
         {
         	var armAngle = angleBetweenTwoX(bodyPositions['leftShoulder'], bodyPositions['leftElbow']);
-
+			//console.log(armAngle);
         	boneDict['upper_armL'].rotation.z = boneAngles['shoulderElbowL'] - armAngle - 3*Math.PI/4;
         }
         if(bodyPositions['rightElbow'])
@@ -277,35 +278,38 @@ function render(video, net) {
         }
         if(bodyPositions['leftWrist'] && bodyPositions['leftElbow'])
         {
-        	var angle = angleBetweenTwoX(bodyPositions['leftWrist'], bodyPositions['leftElbow']);
+        	var angle = angleBetweenTwoX(bodyPositions['leftElbow'], bodyPositions['leftWrist']);
+        	//console.log(angle);
         	//var angle = Math.atan2((bodyPositions['leftWrist'].y-bodyPositions['leftElbow'].y),(bodyPositions['leftWrist'].x-bodyPositions['leftElbow'].x));
-        	boneDict['forearmL'].rotation.z = boneAngles['elbowWristL'] - angle - Math.PI/2 ;
+        	boneDict['forearmL'].rotation.z = boneAngles['elbowWristL'] -boneDict['upper_armL'].rotation.z - angle ;
         	
         }
         if(bodyPositions['rightWrist'] && bodyPositions['rightElbow'])
         {
         	var armAngle = angleBetweenTwoX(bodyPositions['rightElbow'], bodyPositions['rightWrist']);
-        	boneDict['forearmR'].rotation.z = boneAngles['elbowWristR'] - armAngle -Math.PI/2 ;
+        	boneDict['forearmR'].rotation.z = boneAngles['elbowWristR']  -boneDict['upper_armR'].rotation.z- armAngle;
         }
 		if(bodyPositions['leftHip'] && bodyPositions['leftKnee'])
         {
         	var angle = angleBetweenTwoX(bodyPositions['leftHip'], bodyPositions['leftKnee']);
-        	boneDict['thighL'].rotation.z = boneAngles['hipKneeL'] + angle + Math.PI ;
+        	
+        	//boneDict['thighR'].rotation.z = boneAngles['hipKneeL'] +boneDict['hips'].rotation.z+ angle + Math.PI ;
         }
         if(bodyPositions['rightHip'] && bodyPositions['rightKnee'])
         {
         	var angle = angleBetweenTwoX(bodyPositions['rightHip'], bodyPositions['rightKnee']);
-        	boneDict['thighR'].rotation.z = boneAngles['hipKneeR'] + angle + Math.PI ;
+        	
+        	//boneDict['thighR'].rotation.z = boneAngles['hipKneeR']+boneDict['hips'].rotation.z+ angle + Math.PI ;
         }
         if(bodyPositions['leftKnee'] && bodyPositions['leftAnkle'])
         {
         	var angle = angleBetweenTwoX(bodyPositions['leftKnee'], bodyPositions['leftAnkle']);
-        	boneDict['shinL'].rotation.z = boneAngles['kneeAnkleL'] + angle  ;
+        	//boneDict['shinL'].rotation.z = boneAngles['kneeAnkleL'] +boneDict['thighL'].rotation.z+ angle  ;
         }
 		if(bodyPositions['rightKnee'] && bodyPositions['rightAnkle'])
         {
         	var angle = angleBetweenTwoX(bodyPositions['rightKnee'], bodyPositions['rightAnkle']);
-        	boneDict['shinR'].rotation.z = boneAngles['kneeAnkleR'] + angle  ;
+        	//boneDict['shinR'].rotation.z = boneAngles['kneeAnkleR'] +boneDict['thighR'].rotation.z+ angle  ;
         }
         //boneDict['shoulderL'].position.set(bodyPositions['rightShoulder']);
       }
@@ -319,7 +323,7 @@ function render(video, net) {
     time += delta;
     
     ctx.clearRect(0, 0, width, height);
-    const showVideo =  false;
+    const showVideo =  true;
     if (showVideo) {
       ctx.save();
       ctx.scale(-1, 1);
@@ -328,7 +332,6 @@ function render(video, net) {
       ctx.drawImage(video, 0, 0, width, height);
       ctx.restore();
     }
-    
     renderer.render( scene, camera );
 
 	scene.remove(group);
@@ -374,7 +377,7 @@ navigator.getUserMedia = navigator.getUserMedia ||
 
 function draw_square_point(posX,posY, color)
 {
-  size = 0.01;
+  size = 0.05;
   var squareShape = new THREE.Shape();
   squareShape.moveTo( posX-size/2, posY-size/2 );
   squareShape.lineTo( posX-size/2, posY+size/2);
