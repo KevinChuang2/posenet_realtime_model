@@ -1,15 +1,18 @@
+const width = 1000;
+const height = 1000;
+var viewport = new THREE.Vector2(width, height);
 var canvas = document.createElement( 'canvas' );
 var context = canvas.getContext( 'webgl2' );
 const renderer = new THREE.WebGLRenderer( { canvas: canvas, context: context, antialias: true, alpha:true } );
 renderer.setPixelRatio( window.devicePixelRatio );
-renderer.setSize( 500,500 );
+renderer.setSize(width, height);
 renderer.setClearColor( 0x000000, 0 );
 
 var scene = new THREE.Scene();
-var camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000 );
-camera.lookAt( 0, 0, 0 );
+const camera = new THREE.PerspectiveCamera( 90, width/height, 0.1, 1000 ); 
+camera.position.z = 1; 
 var controls = new THREE.OrbitControls( camera, renderer.domElement );
-
+controls.update();
 document.body.appendChild( renderer.domElement );
 scene.background = new THREE.Color( 0x000104 );
 scene.fog = new THREE.FogExp2( 0x000104, 0.0000675 );
@@ -20,8 +23,8 @@ scene.fog = new THREE.FogExp2( 0x000104, 0.0000675 );
 
 var centerX = 0;
 var centerY = 0;
-var cylinderTopRad = 0.005;
-var cylinderBotRad = 0.005;
+var cylinderTopRad = 0.2;
+var cylinderBotRad = 0.2;
 var cylinderLength = 0.5;
 var cylinderRadialSeg =10;
 var cylinderHeightSeg = 10;
@@ -40,20 +43,15 @@ var material = new THREE.MeshPhongMaterial({
 	});
 var cylinder = new THREE.Mesh( geometry, material );
 cylinder.position.set(centerX,centerY,0.0);
-scene.add( cylinder );
+//scene.add( cylinder );
 
-
-var start = new THREE.Vector3(0,0,0);
-var end = new THREE.Vector3(Math.random(), Math.random(),0);
-var group = new THREE.Group();
-generateLightning(start,end, group);
-scene.add(group);
-var groups = [];
-groups.push(group);
-
+var light = new THREE.AmbientLight( 0xFFFFFF ); // soft white light
+scene.add( light );
 camera.position.z = 1;
 controls.update();
 
+var waterballObject = new waterball(0.2, viewport);
+scene.add(waterballObject.mesh);
 //scene.add( new THREE.AmbientLight( 0xFFFFFF ) );
 
 
@@ -61,36 +59,15 @@ controls.update();
 
 var clock = new THREE.Clock();
 
-var waterGroup = new THREE.Group();
-createTestWater(waterGroup);
-scene.add( waterGroup );
-waterGroup.children[0].material.uniforms.viewPos.value = camera.position;
-// White directional light at half intensity shining from the top.
-var directionalLight = new THREE.DirectionalLight( 0xffffff, 1.0 );
-//scene.add( directionalLight );
-directionalLight.target = waterGroup.children[0];
 
 var time = 0;
 var animate = function () {
   requestAnimationFrame( animate );
   var delta = clock.getDelta();
   time +=delta;
-  if(time>50.0)
-  {
-  	time = 0;
-  }
-  waterGroup.children[0].material.uniforms.time.value = time;
-  for(var groupNum in groups)
-  {
-  	var lines = groups[groupNum].children;
-    for(var lineNum in lines)
-    {
-    	lines[lineNum].material.uniforms.time.value = time;
-    }
-  }
-	
-  renderer.render( scene, camera );
+  waterballObject.updateTime(time);
   controls.update();
+  renderer.render( scene, camera );
 
   //composer.render();
 };

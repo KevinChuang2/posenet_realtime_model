@@ -8,264 +8,140 @@
 
 	</head>
 	<body>
-		<script id="vs-explosion" type="x-shader/x-vertex">
+		<script id="vs-fireball" type="x-shader/x-vertex">
 		#version 300 es
-		uniform float centerX;
-		uniform float centerY;
-		uniform float centerZ;
-		uniform float sizeX;
-		uniform float sizeY;
-		uniform float time;
-		vec4 offset; 
+		#define M_PI 3.1415926535897932384626433832795
 		out vec2 vUv;
-		float rand(vec2 co){
-			return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+		out vec3 vertexPos;
+		uniform float iTime;
+		mat4 rotationMatrix(vec3 axis, float angle)
+		{
+			axis = normalize(axis);
+			float s = sin(angle);
+			float c = cos(angle);
+			float oc = 1.0 - c;
+
+			return mat4(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
+						oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,
+						oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
+						0.0,                                0.0,                                0.0,                                1.0);
 		}
+		
 		void main() {
-			gl_PointSize = 5.0;
-
-			offset = normalize(vec4(position.x-centerX, position.y-centerY, position.z-centerZ, 0.0));
-			float randomScalar1 = rand(vec2(offset));
-			float temp = 1.0-time;
-			float randomScalar2 = rand(vec2(position));
-			//expand
-			//offset = 5.0*offset;
-			//explode
-			///*
-			offset = 0.5*randomScalar1*vec4(offset.x+(randomScalar1-randomScalar2),offset.y+(randomScalar1-randomScalar2),
-			offset.z+(randomScalar1-randomScalar2),0.0);
-			//*/
-			gl_Position = projectionMatrix * modelViewMatrix * (vec4( position, 1.0 ) +temp*offset);
-			vUv.x = position.x/sizeX;
-			vUv.y = position.y/sizeY;
-
-		}
-		</script>
-
-		<script id="fs-explosion" type="x-shader/x-fragment">
-		#version 300 es
-
-		precision highp float;
-		precision highp int;	
-		uniform float time;
-		uniform sampler2D myTexture;
-		
-		in vec2 vUv;
-		out vec3 fragColor;
-		
-		void main()
-		{
-			//fragColor = texture(myTexture, vUv);
-			fragColor = vec4(1.0,0.2 ,0.0,0.1*(time));
-		}
-		</script>
-		
-		<script id="vs-lightning" type="x-shader/x-vertex">
-		#version 300 es
-		uniform vec2 offset;
-		uniform float time;
-		out vec3 vPos;
-		float rand(vec2 co){
-			return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
-		}
-		
-		void main()
-		{
-			gl_Position = vec4(position.x, position.y, 0, 1.0) + vec4(offset, 0.0, 0.0);
-			vPos = position.xyz;
-		}
-		
-		</script>
-
-		<script id="fs-lightning" type="x-shader/x-fragment">
-		#version 300 es
-
-		precision highp float;
-		precision highp int;	
-		uniform sampler2D tDiffuse;
-		uniform float opacity;
-		uniform vec3 colorVal;
-		out vec4 fragColor;
-		uniform float time;
-		uniform vec3 begin;
-		uniform vec3 end;
-		float period = 2.0;
-		float fTime;
-		vec3 fPos;
-		float spikeFunc;
-		float spikeTime= 1.0;
-		in vec3 vPos;
-		void main()
-		{
-			fTime = time;
-			fPos = gl_FragCoord.xyz;
-			while(fTime>period)
-			{
-				fTime -= period;
-			}
-
-			float fDist = distance(vPos, begin);
-			float endDist = distance(end,begin);
-			float distRatio = fDist/endDist*period;
-			if((period-distRatio)-(spikeTime/2.0) < fTime && fTime<(period-distRatio)+(spikeTime/2.0))
-			{
-				if((period-distRatio) > fTime)
-				{
-					spikeFunc = 1.0-(period-distRatio-fTime);
-				}
-				else
-				{
-					spikeFunc = 1.0 + (period-distRatio-fTime);
-				}
-			}
-			else
-			{
-				spikeFunc = 0.0;
-			}
-			
-			fragColor = vec4(colorVal, spikeFunc*opacity);
-
-		}
-
-		</script>
-		<script id="vs-water" type="x-shader/x-vertex">
-		#version 300 es
-		uniform float time;
-		uniform float rotationSpeed;
-		out vec3 vPos;
-		out vec3 vNormal;
-		out vec2 vUv;
-		out vec3 fragPos;
-		float rand(vec2 co){
-			return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
-		}
-		
-		void main()
-		{
 			vUv = uv;
-			vec3 pos = position.xyz;
+			vec4 pos = (vec4( position, 1.0 ));
+			//pos =  rotationMatrix(vec3(0.0,0.0,1.0), iTime*0.5) * pos;
+			gl_Position = projectionMatrix * modelViewMatrix *pos;
 
-			pos= pos *mat3(cos(rotationSpeed*time), 0.0 , sin(rotationSpeed*time),
-						   0.0 , 1.0, 0.0,
-						   -sin(rotationSpeed*time), 0.0, cos(rotationSpeed*time));
-			vPos = pos;
-			vNormal = mat3(transpose(inverse(modelMatrix))) * normal;  
-			fragPos = vec3(modelMatrix * vec4(position, 1.0));
-			vec4 mvPosition = modelViewMatrix * vec4( pos, 1.0 );
-			gl_Position = projectionMatrix * mvPosition;
 		}
-		
 		</script>
 
-		<script id="fs-water" type="x-shader/x-fragment">
+		<script id="fs-fireball" type="x-shader/x-fragment">
 		#version 300 es
-
-		precision highp float;
-		precision highp int;	
-		uniform sampler2D textureNoise;
-		uniform sampler2D textureWater;
-		uniform sampler2D waterNormal;
-		uniform vec3 viewPos;
-		uniform vec4 shallowColor;
-		uniform vec4 deepColor;
-		uniform vec3 lightPos;  
-		uniform vec4 lightColor;
-		in vec2 vUv;
-		in vec3 vPos;
-		in vec3 vNormal;
-		in vec3 fragPos;
+		uniform vec2 viewport;
+		uniform float insideRadius;
+		uniform float iTime;
 		out vec4 fragColor;
-		void main()
+		
+		float snoise(vec3 uv, float res)	// by trisomie21
 		{
-			float ambientStrength = 0.6;
-			float specularStrength = 0.5;
-			vec3 ambient = ambientStrength * lightColor.xyz;
-			
-			vec3 norm = texture(waterNormal,vUv).rgb;
-			norm = normalize(norm * 2.0 - 1.0);   
-			vec3 lightDir = normalize(lightPos - fragPos); 
-			vec3 viewDir = normalize(viewPos-fragPos);
-			vec3 reflectDir = reflect(-lightDir, norm);
-			float diff = max(dot(norm, lightDir), 0.0);
-			vec3 diffuse = diff * lightColor.xyz;
+			const vec3 s = vec3(1e0, 1e2, 1e4);
 
-			vec4 noise = texture(textureWater, vUv);
-			
-			vec4 color = mix(shallowColor, deepColor, noise.y);
-			float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
-			vec3 specular = specularStrength * spec * lightColor.xyz;  
-			vec3 result = (ambient + diffuse+specular) * color.xyz;
-			
-			fragColor = vec4(result, 0.76);
+			uv *= res;
+
+			vec3 uv0 = floor(mod(uv, res))*s;
+			vec3 uv1 = floor(mod(uv+vec3(1.), res))*s;
+
+			vec3 f = fract(uv); f = f*f*(3.0-2.0*f);
+
+			vec4 v = vec4(uv0.x+uv0.y+uv0.z, uv1.x+uv0.y+uv0.z,
+						  uv0.x+uv1.y+uv0.z, uv1.x+uv1.y+uv0.z);
+
+			vec4 r = fract(sin(v*1e-3)*1e5);
+			float r0 = mix(mix(r.x, r.y, f.x), mix(r.z, r.w, f.x), f.y);
+
+			r = fract(sin((v + uv1.z - uv0.z)*1e-3)*1e5);
+			float r1 = mix(mix(r.x, r.y, f.x), mix(r.z, r.w, f.x), f.y);
+
+			return mix(r0, r1, f.z)*2.-1.;
 		}
 
+		void main()
+		{	
+			// using gl_fragCoord will make it always face camera
+			vec2 p = -.67 + gl_FragCoord.xy / viewport;	
+			//left number controls the radius of the center
+			//right numbers control general size 
+			float color = 2.5 - (25.0*length(p));
+			//this shows how fine the particles are
+			vec3 coord = vec3(atan(p.x,p.y), length(p), 0.5)/0.6;
+			
+			for(int i = 1; i <= 4; i++)
+			{
+				float power = pow(3.0, float(i));
+				color += (1.5 / power) * snoise(coord + vec3(0.,-iTime*.05, iTime*.01), power*16.);
+			}
+			fragColor = vec4( color, pow(max(color,0.),2.)*0.4, pow(max(color,0.),2.)*0.15 , 1.0);
+		}
 		</script>
-
-		</script>
-		<script id="vs-foam" type="x-shader/x-vertex">
+		<script id="vs-waterball" type="x-shader/x-vertex">
 		#version 300 es
-		uniform float time;
-		uniform float rotationSpeed;
-		out vec3 vPos;
-		out vec3 vNormal;
+		#define M_PI 3.1415926535897932384626433832795
 		out vec2 vUv;
-		out vec3 fragPos;
-		float rand(vec2 co){
-			return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+		out vec3 vertexPos;
+		uniform float iTime;
+		mat4 rotationMatrix(vec3 axis, float angle)
+		{
+			axis = normalize(axis);
+			float s = sin(angle);
+			float c = cos(angle);
+			float oc = 1.0 - c;
+
+			return mat4(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
+						oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,
+						oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
+						0.0,                                0.0,                                0.0,                                1.0);
 		}
 		
-		void main()
-		{
+		void main() {
 			vUv = uv;
-			vec3 pos = position.xyz;
+			vec4 pos = (vec4( position, 1.0 ));
+			//pos =  rotationMatrix(vec3(0.0,0.0,1.0), iTime*0.5) * pos;
+			vertexPos = vec3(projectionMatrix * modelViewMatrix *pos);
+			gl_Position = projectionMatrix * modelViewMatrix *pos;
 
-			pos= pos *mat3(cos(rotationSpeed*time), 0.0 , sin(rotationSpeed*time),
-						   0.0 , 1.0, 0.0,
-						   -sin(rotationSpeed*time), 0.0, cos(rotationSpeed*time));
-			vPos = pos;
-			vNormal = normal;
-			fragPos = vec3(modelMatrix * vec4(position, 1.0));
-			vec4 mvPosition = modelViewMatrix * vec4( pos, 1.0 );
-			gl_Position = projectionMatrix * mvPosition;
 		}
-		
 		</script>
 
-		<script id="fs-foam" type="x-shader/x-fragment">
+		<script id="fs-waterball" type="x-shader/x-fragment">
 		#version 300 es
-
-		precision highp float;
-		precision highp int;	
-		uniform vec3 lightPos;  
-		uniform vec4 lightColor;
-		uniform sampler2D textureWater;
 		in vec2 vUv;
-		in vec3 vPos;
-		in vec3 vNormal;
-		in vec3 fragPos;
+		in vec3 vertexPos;
+		uniform vec2 viewport;
+		uniform vec2 center;
+		uniform sampler2D diffuse_map;
+		uniform sampler2D normal_map;
+		uniform vec3 light_position;
+		uniform vec3 light_color;
+		uniform float iTime;
+		uniform float scale;
 		out vec4 fragColor;
+	
 		void main()
-		{
-			float ambientStrength = 0.7;
-			vec3 ambient = ambientStrength * lightColor.xyz;
-
-			vec3 norm = normalize(vNormal);
-			vec3 lightDir = normalize(lightPos - fragPos); 
-			//vec4 texel = texture(textureNoise,vUv);
-
-			float diff = max(dot(norm, lightDir), 0.0);
-			vec3 diffuse = diff * lightColor.xyz;
-			vec3 result = (ambient+diffuse)*vec3(1.0,1.0,1.0);
-			//fragColor = vec4(result, 1.0);
-			fragColor = texture(textureWater, vUv);
+		{	
+			
+			vec3 Normal = texture(normal_map, vUv).rgb;
+			vec3 lightDir = normalize(light_position - vertexPos);
+			vec3 Diffuse = texture(diffuse_map, vUv).rgb;
+			vec3 diffuse = max(dot(Normal, lightDir), 0.0) * Diffuse * light_color;
+			vec3 lighting = diffuse;
+			fragColor = 	vec4(lighting,1.0);
 		}
-
 		</script>
-
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/97/three.js"></script>
-		<script src="./flowingWater.js"></script>
-		<script src="./lightning.js"></script>
-		<script src="./test.js" type = "module"></script>
+		<script src="./src/fireball.js"></script>
+		<script src="./src/waterball.js"></script>
+		<script src="./src/test.js" type = "module"></script>
 		<script src="./controls/OrbitControls.js"></script>
 		<script src="./postprocessing/EffectComposer.js"></script>
 		<script src="./postprocessing/ShaderPass.js"></script>

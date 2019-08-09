@@ -2,10 +2,12 @@
 
 const width = 1000;
 const height = 1000;
-
+var viewport = new THREE.Vector2(width, height);
 // Setup scene
 const scene = new THREE.Scene();
-//scene.background = new THREE.Color( 0xff0000 );
+const bgloader = new THREE.TextureLoader();
+const bgTexture = bgloader.load('./images/background.jpg');
+scene.background = bgTexture;
 //  We use an orthographic camera here instead of persepctive one for easy mapping
 //  Bounded from 0 to width and 0 to height
 // Near clipping plane of 0.1; far clipping plane of 1000
@@ -52,6 +54,13 @@ var loader = new THREE.GLTFLoader();
 var model;
 var boneDict = {};
 var boneAngles = {};
+var fireballObject = new fireball(0.3, viewport);
+scene.add(fireballObject.mesh);
+//fireballObject.mesh.scale.set(fireballObject.mesh.scale.x/2,fireballObject.mesh.scale.y/2,fireballObject.mesh.scale.z/2)
+/*
+var fireballSprite = new fireballSprite();
+scene.add(fireballSprite.sprite);
+*/
 // Load a glTF resource
 loader.load(
 	// resource URL
@@ -91,33 +100,6 @@ loader.load(
 	}
 );
 
-
-//
-/*
-var ironManGeometry = new THREE.Geometry();
-var mtlLoader = new THREE.MTLLoader();
-mtlLoader.load( 'models/IronMan/IronMan.mtl', function( materials ) {
-
-  materials.preload();
-
-  var objLoader = new THREE.OBJLoader();
-  objLoader.setMaterials( materials );
-  objLoader.load( "models/IronMan/IronMan.obj", function ( object ) {
-    console.log(object);
-    for(var i=0; i<object.children.length; i++)
-    {
-      var tempGeometry =  new THREE.Geometry().fromBufferGeometry( object.children[i].geometry);
-      object.children[i].updateMatrix();
-      ironManGeometry.merge(tempGeometry, object.children[i].matrix);
-    }
-    var tempMesh = new THREE.Mesh(ironManGeometry, new THREE.MeshBasicMaterial( { color: 0xffffff } ));
-    console.log("done");
-    console.log(tempMesh);
-    scene.add( tempMesh );
-  } );
-
-} );
-*/
 var time = 0.0;
 // POSENET
 // Adapted from code at https://github.com/tensorflow/tfjs-models/blob/master/posenet/demos/camera.js
@@ -229,11 +211,6 @@ function render(video, net) {
       }
     }
     scene.add(group);
-    
-    /*
-    console.log(bodyPositions);
-    console.log(boneDict);
-    */
     if(model)
     {
       var boneMidPoint;
@@ -253,8 +230,15 @@ function render(video, net) {
         //model.position.set(model.position.x+offset.x, model.position.y + offset.y,0);
         var endPosition = new THREE.Vector3(model.position.x+offset.x, model.position.y + offset.y,0);
         moveTowards(model, endPosition);
-        if(realToModelRatio>7.2 || realToModelRatio<6.8)
+        if(realToModelRatio>8 || realToModelRatio<6)
+        {
+
         	model.scale.set(model.scale.x*realToModelRatio/7, model.scale.y*realToModelRatio/7, model.scale.z*realToModelRatio/7);
+        	
+			fireballObject.updateScale(realToModelRatio/7);
+			//console.log(realToModelRatio/7);
+        	//fireballObject.mesh.scale.set(fireballObject.mesh.scale.x*realToModelRatio/100,fireballObject.mesh.scale.y*realToModelRatio/100,fireballObject.mesh.scale.z*realToModelRatio/100)
+        }
         
 	
         if(bodyPositions['nose'])
@@ -288,6 +272,21 @@ function render(video, net) {
         {
         	var armAngle = angleBetweenTwoX(bodyPositions['rightElbow'], bodyPositions['rightWrist']);
         	boneDict['forearmR'].rotation.z = boneAngles['elbowWristR']  -boneDict['upper_armR'].rotation.z- armAngle;
+			var tempOffset = bodyPositions['rightWrist'].clone().sub(bodyPositions['rightElbow'].clone());
+			var tempPosition = new THREE.Vector3();
+        	boneDict['handR'].updateMatrixWorld();
+        	boneDict['handR'].getWorldPosition(tempPosition);
+			tempOffset = tempOffset.normalize();
+			tempOffset.multiplyScalar(0.25);
+			tempPosition.add(tempOffset);
+			tempOffset = tempOffset.normalize();
+			tempOffset = tempOffset.applyAxisAngle(new THREE.Vector3(0,0,1), Math.PI/2);
+			tempOffset.multiplyScalar(0.5);
+        	
+        	tempPosition.add(tempOffset);
+        	//tempPosition += boneDict['forearmR'].rotation.normalize()*0.5;
+        	//fireballObject.updateCenter(new THREE.Vector2(tempPosition.x, tempPosition.y));
+        	fireballObject.setPosition(tempPosition);
         }
 		if(bodyPositions['leftHip'] && bodyPositions['leftKnee'])
         {
@@ -321,9 +320,9 @@ function render(video, net) {
     }
     var delta = clock.getDelta();
     time += delta;
-    
+    fireballObject.updateTime(time);
     ctx.clearRect(0, 0, width, height);
-    const showVideo =  true;
+    const showVideo =  false;
     if (showVideo) {
       ctx.save();
       ctx.scale(-1, 1);
@@ -337,10 +336,6 @@ function render(video, net) {
 	scene.remove(group);
     stats.end();
     requestAnimationFrame(detect);
-    
-    
-    
-    //composer.render(delta);
     
   }
 
@@ -394,39 +389,6 @@ function draw_square_point(posX,posY, color)
 
 
 main();
-
-
-function _mergeMeshes(meshes, toBufferGeometry) {
-
-    var finalGeometry,
-        materials = [],
-        mergedGeometry = new THREE.Geometry(),
-        mergeMaterial,
-        mergedMesh;
-
-    meshes.forEach(function(mesh, index) {
-        mesh.updateMatrix();
-        mesh.geometry.faces.forEach(function(face) {face.materialIndex = 0;});
-        mergedGeometry.merge(mesh.geometry, mesh.matrix, index);
-        materials.push(mesh.material);
-    });
-
-    mergedGeometry.groupsNeedUpdate = true;
-    mergeMaterial = new THREE.MeshFaceMaterial(materials);
-
-    if (toBufferGeometry) {
-        finalGeometry = new THREE.BufferGeometry().fromGeometry(mergedGeometry);
-    } else {
-        finalGeometry = mergedGeometry;
-    }
-
-    mergedMesh = new THREE.Mesh(finalGeometry, mergeMaterial);
-    mergedMesh.geometry.computeFaceNormals();
-    mergedMesh.geometry.computeVertexNormals();
-
-    return mergedMesh;
-
-}
 
 function midPoint(vec1, vec2)
 {
