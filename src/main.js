@@ -56,12 +56,31 @@ var boneDict = {};
 var boneAngles = {};
 var fireballObject = new fireball(0.3, viewport);
 scene.add(fireballObject.mesh);
-//fireballObject.mesh.scale.set(fireballObject.mesh.scale.x/2,fireballObject.mesh.scale.y/2,fireballObject.mesh.scale.z/2)
-/*
-var fireballSprite = new fireballSprite();
-scene.add(fireballSprite.sprite);
-*/
-// Load a glTF resource
+
+var waterEarthGroup = new THREE.Group();
+var earthballObject = new earthball(5, viewport);
+earthballObject.updateScale(0.03);
+waterEarthGroup.add(earthballObject.mesh);
+var curveRadius = 0.03;
+var curvePath = new CustomSinCurve( curveScale );
+var waterObject = new flowingWater(curvePath, curveRadius);
+waterEarthGroup.add(waterObject.mesh);
+waterEarthGroup.position.set(waterEarthGroup.position.x, waterEarthGroup.position.y, 0.5);
+scene.add(waterEarthGroup);
+
+var effectBloom = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5,0.4,0.85);
+effectBloom.threshold = 0.21;
+effectBloom.strength = 1;
+effectBloom.radius = 0.3;
+effectBloom.renderToScreen = true;
+var composer = new THREE.EffectComposer( renderer );
+var renderModel = new THREE.RenderPass( scene, camera );
+var copyPass = new THREE.ShaderPass( THREE.CopyShader );
+copyPass.renderToScreen = true;
+composer.addPass( renderModel );
+//composer.addPass( effectBloom );
+//composer.addPass( copyPass );
+composer.setSize(canvas.width, canvas.height);
 loader.load(
 	// resource URL
 	'models/human.glb',
@@ -236,6 +255,7 @@ function render(video, net) {
         	model.scale.set(model.scale.x*realToModelRatio/7, model.scale.y*realToModelRatio/7, model.scale.z*realToModelRatio/7);
         	
 			fireballObject.updateScale(realToModelRatio/7);
+			waterEarthGroup.scale.set(realToModelRatio/10, realToModelRatio/10, realToModelRatio/10);
 			//console.log(realToModelRatio/7);
         	//fireballObject.mesh.scale.set(fireballObject.mesh.scale.x*realToModelRatio/100,fireballObject.mesh.scale.y*realToModelRatio/100,fireballObject.mesh.scale.z*realToModelRatio/100)
         }
@@ -266,7 +286,21 @@ function render(video, net) {
         	//console.log(angle);
         	//var angle = Math.atan2((bodyPositions['leftWrist'].y-bodyPositions['leftElbow'].y),(bodyPositions['leftWrist'].x-bodyPositions['leftElbow'].x));
         	boneDict['forearmL'].rotation.z = boneAngles['elbowWristL'] -boneDict['upper_armL'].rotation.z - angle ;
+        	var tempOffset = bodyPositions['leftWrist'].clone().sub(bodyPositions['leftElbow'].clone());
+			var tempPosition = new THREE.Vector3();
+        	boneDict['handL'].updateMatrixWorld();
+        	boneDict['handL'].getWorldPosition(tempPosition);
+			tempOffset = tempOffset.normalize();
+			tempOffset.multiplyScalar(0.25);
+			tempPosition.add(tempOffset);
+			tempOffset = tempOffset.normalize();
+			tempOffset = tempOffset.applyAxisAngle(new THREE.Vector3(0,0,1), -Math.PI/2);
+			tempOffset.multiplyScalar(0.5);
         	
+        	tempPosition.add(tempOffset);
+        	//tempPosition += boneDict['forearmR'].rotation.normalize()*0.5;
+        	//fireballObject.updateCenter(new THREE.Vector2(tempPosition.x, tempPosition.y));
+        	waterEarthGroup.position.set(tempPosition.x, tempPosition.y, tempPosition.z);
         }
         if(bodyPositions['rightWrist'] && bodyPositions['rightElbow'])
         {
@@ -321,6 +355,8 @@ function render(video, net) {
     var delta = clock.getDelta();
     time += delta;
     fireballObject.updateTime(time);
+    earthballObject.updateTime(time);
+    waterObject.updateTime(time);
     ctx.clearRect(0, 0, width, height);
     const showVideo =  false;
     if (showVideo) {
@@ -331,8 +367,8 @@ function render(video, net) {
       ctx.drawImage(video, 0, 0, width, height);
       ctx.restore();
     }
-    renderer.render( scene, camera );
-
+    //renderer.render( scene, camera );
+	composer.render(delta);
 	scene.remove(group);
     stats.end();
     requestAnimationFrame(detect);

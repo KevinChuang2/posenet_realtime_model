@@ -3,20 +3,21 @@ const height = 1000;
 var viewport = new THREE.Vector2(width, height);
 var canvas = document.createElement( 'canvas' );
 var context = canvas.getContext( 'webgl2' );
-const renderer = new THREE.WebGLRenderer( { canvas: canvas, context: context, antialias: true, alpha:true } );
+const renderer = new THREE.WebGLRenderer( { canvas: canvas, context: context, antialias: true } );
 renderer.setPixelRatio( window.devicePixelRatio );
 renderer.setSize(width, height);
+//renderer.autoClear = false;
 renderer.setClearColor( 0x000000, 0 );
 
 var scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 90, width/height, 0.1, 1000 ); 
+camera.position.x =0;
+camera.position.y = 0;
 camera.position.z = 1; 
 var controls = new THREE.OrbitControls( camera, renderer.domElement );
 controls.update();
 document.body.appendChild( renderer.domElement );
 scene.background = new THREE.Color( 0x000104 );
-scene.fog = new THREE.FogExp2( 0x000104, 0.0000675 );
-
 /****************************************************/
 //create base cylinder
 /****************************************************/
@@ -48,28 +49,72 @@ cylinder.position.set(centerX,centerY,0.0);
 var light = new THREE.AmbientLight( 0xFFFFFF ); // soft white light
 scene.add( light );
 camera.position.z = 1;
+var pointLight = new THREE.PointLight( 0xffffff, 1 );
+camera.add( pointLight );
 controls.update();
-
-var waterballObject = new waterball(0.2, viewport);
-scene.add(waterballObject.mesh);
-//scene.add( new THREE.AmbientLight( 0xFFFFFF ) );
-
-
-
-
 var clock = new THREE.Clock();
-
-
 var time = 0;
+
+
+var waterLavaGroup = new THREE.Group();
+var lavaballObject = new lavaball(0.3);
+waterLavaGroup.add(lavaballObject.mesh);
+var curveRadius = 0.05;
+//var curvePath = new CustomSinCurve(3 );
+//var waterObject = new flowingWater(curvePath, curveRadius);
+var curvePathTest = new CustomSinCurve(1, 0.3, 0.3, 6	);
+var waterObject = new flowingWaterMatcap(curvePathTest,  curveRadius);
+var geo = new THREE.EdgesGeometry( waterObject.geometry ); // or WireframeGeometry( geometry )
+
+var mat = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 2 } );
+
+var wireframe = new THREE.LineSegments( geo, mat );
+
+//waterLavaGroup.add( wireframe );
+//console.log(waterObject.geometry);
+waterObject.geometry.uvsNeedUpdate = true;
+waterLavaGroup.add(waterObject.mesh);
+scene.add(waterLavaGroup);
+//console.log(waterObject.geometry.attributes);
+
+waterLavaGroup.position.set(0,0,0);
+
+var lightBallGeo = new THREE.SphereBufferGeometry(0.1,10,10);
+var lightBallMaterial = new THREE.MeshBasicMaterial( {color: 0xffffff} );
+var sphere = new THREE.Mesh( lightBallGeo, lightBallMaterial );
+//scene.add( sphere );
+sphere.position.x = 0.0;
+sphere.position.y = 0.0;
+sphere.position.z = 1.0;
+
+
+
+var parameters = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat, stencilBuffer: false };
+var renderTarget = new THREE.WebGLRenderTarget( width,height, parameters );
+var renderModel = new THREE.RenderPass( scene, camera );
+var effectBloom = new THREE.UnrealBloomPass(new THREE.Vector2(width,height), 1.5,0.4,0.85);
+effectBloom.threshold = 0.20;
+effectBloom.strength = 0.4;
+effectBloom.radius = 0.2;
+var composer = new THREE.EffectComposer( renderer, renderTarget );
+composer.addPass( renderModel );
+composer.addPass( effectBloom );
+
 var animate = function () {
   requestAnimationFrame( animate );
   var delta = clock.getDelta();
   time +=delta;
-  waterballObject.updateTime(time);
+  
   controls.update();
-  renderer.render( scene, camera );
+  //renderer.render( scene, camera );
+  composer.render(  );
+  
+  waterObject.updateTime(time);
+  waterObject.rotate();
+  lavaballObject.updateTime(time);
+ 
+  
 
-  //composer.render();
 };
 
 
