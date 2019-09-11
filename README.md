@@ -5,18 +5,20 @@ My implementation of combining Tensorflow's posenet and Three.js. This manipulat
 You can try it here: https://kevinchuang2.github.io/posenet_realtime_model/
 
 Included Effects:
-Lava Spiral
-Lightning
-Volumetric Fire
+Lava Spiral  
+Lightning  
+Volumetric Fire  
 
 Excluded Effects:
-2D fire
-Flowing water
+2D fire  
+Flowing water  
 
 
-Sample GIFS:
+## Sample GIFS:
+
+
 ![Deprecated Lava Ball](lavawater.gif) 
 
-#Acknowledgements
+## Acknowledgements
 Thanks to user mattatz (https://github.com/mattatz/THREE.Fire) for his implementation of volumetric fire
 
