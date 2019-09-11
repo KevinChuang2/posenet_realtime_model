@@ -55,14 +55,15 @@ controls.update();
 var clock = new THREE.Clock();
 var time = 0;
 
-
 var waterLavaGroup = new THREE.Group();
-var lavaballObject = new lavaball(0.3);
-waterLavaGroup.add(lavaballObject.mesh);
-var curveRadius = 0.05;
+
+var curvePathTest = new Helix(1);
+var curveRadius = 0.1;
+var lavaObject = new lavaspiral(curvePathTest, curveRadius);
+waterLavaGroup.add(lavaObject.mesh);
+
 //var curvePath = new CustomSinCurve(3 );
 //var waterObject = new flowingWater(curvePath, curveRadius);
-var curvePathTest = new CustomSinCurve(1, 0.3, 0.3, 6	);
 var waterObject = new flowingWaterMatcap(curvePathTest,  curveRadius);
 var geo = new THREE.EdgesGeometry( waterObject.geometry ); // or WireframeGeometry( geometry )
 
@@ -73,7 +74,7 @@ var wireframe = new THREE.LineSegments( geo, mat );
 //waterLavaGroup.add( wireframe );
 //console.log(waterObject.geometry);
 waterObject.geometry.uvsNeedUpdate = true;
-waterLavaGroup.add(waterObject.mesh);
+//waterLavaGroup.add(waterObject.mesh);
 scene.add(waterLavaGroup);
 //console.log(waterObject.geometry.attributes);
 
@@ -87,7 +88,10 @@ sphere.position.x = 0.0;
 sphere.position.y = 0.0;
 sphere.position.z = 1.0;
 
+var tex = new THREE.TextureLoader().load("images/fire/fireTest3.jpg");
+var fire = new THREE.Fire( tex );
 
+scene.add( fire );
 
 var parameters = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat, stencilBuffer: false };
 var renderTarget = new THREE.WebGLRenderTarget( width,height, parameters );
@@ -100,19 +104,27 @@ var composer = new THREE.EffectComposer( renderer, renderTarget );
 composer.addPass( renderModel );
 composer.addPass( effectBloom );
 
+/*
+var fireTexture = new THREE.TextureLoader().load( "images/fire/fireSpreadSheet.png" )
+var fire = new TextureAnimator(fireTexture, 95, 1, 95 , 75);
+var fireMaterial = new THREE.MeshBasicMaterial({map:fireTexture, side: THREE.DoubleSide});
+var fireGeometry = new THREE.PlaneGeometry(50,50,1,1);
+var fireMesh = new THREE.Mesh(fireGeometry, fireMaterial);
+scene.add(fireMesh);
+*/
 var animate = function () {
   requestAnimationFrame( animate );
   var delta = clock.getDelta();
   time +=delta;
-  
+  //fire.update(1000*delta);
   controls.update();
   //renderer.render( scene, camera );
   composer.render(  );
   
   waterObject.updateTime(time);
   waterObject.rotate();
-  lavaballObject.updateTime(time);
- 
+  lavaObject.updateTime(time);
+  fire.update(time);
   
 
 };
@@ -125,3 +137,5 @@ function getCenter(mesh)
   mesh.geometry.computeBoundingSphere();
   return mesh.geometry.boundingSphere.center;
 }
+
+

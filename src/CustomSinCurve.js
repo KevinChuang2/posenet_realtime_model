@@ -20,10 +20,11 @@ CustomSinCurve.prototype.constructor = CustomSinCurve;
 CustomSinCurve.prototype.getPoint = function ( t ) {
 
     var curveLength =Math.PI*2;
+    
     /*
-    var tx = 0.15*Math.sin(curveLength*t);
-	var ty = 0;
-	var tz = 0.2*Math.sin(curveLength*t)*Math.cos(curveLength*t);
+    var tx = 0.15*Math.sin(Math.PI*8*t);
+	var ty = 0.6*t;
+	var tz = 0.15*Math.cos(Math.PI*8*t);
     */
     
     /*
@@ -32,10 +33,12 @@ CustomSinCurve.prototype.getPoint = function ( t ) {
 	var tz = curveSizeScalar* Math.cos(curveLengthScalar*t);
 	*/
 	
+	
     var tx = (this.R+this.r*Math.cos(this.n*t*curveLength)) * Math.cos(t*curveLength);
 	var ty = (this.R+this.r*Math.cos(this.n*t*curveLength)) * Math.sin(t*curveLength);
 	var tz = this.r*Math.sin(this.n*t*curveLength);
-
+	
+	
 	return new THREE.Vector3( tx, ty, tz ).multiplyScalar( this.scale );
 
 };

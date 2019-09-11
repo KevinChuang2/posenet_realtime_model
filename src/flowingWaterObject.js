@@ -144,7 +144,6 @@ function flowingWaterMatcap(curvePath, curveRadius)
 
   })
   waterMaterial.onBeforeCompile = (shader) => {
-  console.log(shader);
   shader.uniforms.time = { value: 0}
   shader.vertexShader = `
          uniform float time;
