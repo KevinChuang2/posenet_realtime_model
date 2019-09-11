@@ -1,13 +1,11 @@
 # posenet_realtime_model
 
-My implementation of combining Tensorflow's posenet and Three.js.
-
-The model mimicks your movement so please allow the web camera.
+My implementation of combining Tensorflow's posenet and Three.js. This manipulates a rigged model to copy the movements of a person through their webcam, with bonus added special effects. The goal of this was a proof of concept as a real time view of special effects that could be used by movies to preview what a scene would look like before CGI was added. 
 
 You can try it here: https://kevinchuang2.github.io/posenet_realtime_model/
 
-GIFS of effects:
 
+GIFS of effects:
 
 
 
