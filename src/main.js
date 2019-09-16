@@ -259,7 +259,7 @@ function render(video, net) {
                     var spiralScale = 9;
                     waterLavaSpiral.scale.set(realToModelRatio/spiralScale, realToModelRatio/spiralScale, realToModelRatio/spiralScale);
                     var fireScale = 8;
-                    fire.scale.set(realToModelRatio/fireScale/2, realToModelRatio/fireScale*2, realToModelRatio/fireScale);
+                    fire.scale.set(realToModelRatio/fireScale/2, realToModelRatio/fireScale*2.5, realToModelRatio/fireScale);
                 }
 
 
